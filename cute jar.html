@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cute Jar Animation</title>
+  <style>
+    body {
+      margin: 0;
+      background: #85e3f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      transition: background 1s;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .jar {
+      position: relative;
+      width: 200px;
+      height: 300px;
+      background: #b3f0ff;
+      border: 6px solid #000;
+      border-radius: 30px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+      transition: background 1s;
+    }
+
+    .lid {
+      position: absolute;
+      top: -20px;
+      left: 20px;
+      width: 160px;
+      height: 30px;
+      background: #333;
+      border-radius: 10px;
+      z-index: 10;
+    }
+
+    .face-container {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .eyes {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .eye {
+      width: 16px;
+      height: 16px;
+      background: #000;
+      border-radius: 50%;
+      margin: 0 20px;
+    }
+
+    .blush {
+      width: 22px;
+      height: 10px;
+      background: #ffb6c1;
+      border-radius: 5px;
+      opacity: 0.7;
+      margin: 0 5px;
+    }
+
+    .smile-container {
+      position: relative;
+      width: 80px;
+      height: 40px;
+      overflow: hidden;
+    }
+
+    .smile {
+      position: absolute;
+      width: 80px;
+      height: 40px;
+      border-bottom: 3px solid #000;
+      border-radius: 0 0 40px 40px;
+      animation: smile-animate 3s infinite ease-in-out;
+      bottom: 0;
+    }
+
+    @keyframes smile-animate {
+      0%, 100% { 
+        transform: scaleX(1);
+        border-radius: 0 0 40px 40px;
+      }
+      50% { 
+        transform: scaleX(1.2);
+        border-radius: 0 0 50px 50px;
+      }
+    }
+
+    .dot {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: black;
+      border-radius: 50%;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+      filter: brightness(1.2);
+      z-index: 1; /* Behind the face but above jar background */
+    }
+
+    .night {
+      background: #0a1e3f;
+    }
+
+    .night .jar {
+      background: #152f4f;
+    }
+
+    .night .dot {
+      background: #b3ff00;
+      box-shadow: 0 0 5px 1px #b3ff00;
+    }
+    
+    .jar-bottom {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 30px;
+      background: rgba(179, 240, 255, 0.7);
+      border-radius: 0 0 24px 24px;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="jar" onclick="toggleNightMode()">
+    <div class="lid"></div>
+    <div class="jar-bottom"></div>
+    
+    <div class="face-container">
+      <div class="eyes">
+        <span class="blush"></span>
+        <span class="eye"></span>
+        <span class="eye"></span>
+        <span class="blush"></span>
+      </div>
+      <div class="smile-container">
+        <div class="smile"></div>
+      </div>
+    </div>
+    
+    <!-- Firefly Dots -->
+    <script>
+      const jar = document.querySelector('.jar');
+      const jarWidth = jar.offsetWidth;
+      const jarHeight = jar.offsetHeight;
+      const faceTop = jarHeight - 100; // Keep fireflies above this position
+      
+      function createFirefly() {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        
+        // Random starting position (above the face)
+        const startX = Math.random() * (jarWidth - 20) + 10;
+        const startY = Math.random() * (faceTop - 30) + 10;
+        
+        // Generate random path (constrained to stay above face)
+        const path = generateRandomPath(startX, startY, jarWidth, faceTop);
+        
+        dot.style.left = startX + 'px';
+        dot.style.top = startY + 'px';
+        
+        // Create animation
+        const animationName = `fly-${Math.random().toString(36).substr(2, 9)}`;
+        const duration = 5 + Math.random() * 10;
+        
+        const styleSheet = document.styleSheets[0];
+        const keyframes = `
+          @keyframes ${animationName} {
+            ${path.map((point, i) => {
+              const percentage = (i / (path.length - 1)) * 100;
+              return `${percentage}% { transform: translate(${point.x - startX}px, ${point.y - startY}px); }`;
+            }).join(' ')}
+          }
+        `;
+        styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
+        
+        dot.style.animation = `${animationName} ${duration}s infinite`;
+        jar.appendChild(dot);
+        
+        // Random brightness flicker
+        const flickerName = `flicker-${Math.random().toString(36).substr(2, 9)}`;
+        const flickerKeyframes = `
+          @keyframes ${flickerName} {
+            0%, 100% { opacity: ${0.7 + Math.random() * 0.3}; }
+            50% { opacity: ${0.3 + Math.random() * 0.5}; }
+          }
+        `;
+        styleSheet.insertRule(flickerKeyframes, styleSheet.cssRules.length);
+        dot.style.animation += `, ${flickerName} ${1 + Math.random() * 3}s infinite`;
+      }
+      
+      function generateRandomPath(startX, startY, maxWidth, maxHeight) {
+        const points = [];
+        const numPoints = 10 + Math.floor(Math.random() * 10);
+        let currentX = startX;
+        let currentY = startY;
+        
+        for (let i = 0; i < numPoints; i++) {
+          points.push({ x: currentX, y: currentY });
+          
+          // Calculate next point with some randomness but staying within bounds
+          currentX += (Math.random() * 40 - 20);
+          currentY += (Math.random() * 30 - 15);
+          
+          // Constrain to jar boundaries and above face
+          currentX = Math.max(10, Math.min(maxWidth - 10, currentX));
+          currentY = Math.max(10, Math.min(maxHeight - 10, currentY));
+        }
+        
+        // Close the loop by returning to near the start point
+        points.push({ x: startX + (Math.random() * 10 - 5), y: startY + (Math.random() * 10 - 5) });
+        
+        return points;
+      }
+      
+      // Create 15-25 fireflies
+      const fireflyCount = 15 + Math.floor(Math.random() * 10);
+      for (let i = 0; i < fireflyCount; i++) {
+        createFirefly();
+      }
+    </script>
+  </div>
+
+  <script>
+    function toggleNightMode() {
+      document.body.classList.toggle('night');
+    }
+  </script>
+</body>
+</html>
